@@ -1,0 +1,13 @@
+#!/usr/bin/expect -f
+set timeout 120
+
+set dbEnv [lindex $argv 0]
+# t: test (default value if no enter) . p: production, pre: preprod
+
+set orderId [lindex $argv 1]
+# orderNo 
+
+puts $dbEnv
+
+spawn expect ./runmysql.exp $dbEnv "select * from SalesOrder where orderNo='$orderId' \\G; \r"
+interact
