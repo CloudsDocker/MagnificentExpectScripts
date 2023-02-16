@@ -1,0 +1,38 @@
+
+#!/usr/bin/expect -f
+set timeout 120
+
+set orderId [lindex $argv 0]
+# either be orderNo or order id
+set dbEnv [lindex $argv 1]
+# t: test (default value if no enter) . p: production, pre: preprod
+puts $dbEnv
+
+send "Reading your login for Jumpserver from file ~/.your_own_folder/expect_username\n"
+set fileUserLogin [open ~/.your_own_folder/expect_username]
+gets $fileUserLogin userLogin
+
+if {[regexp -nocase $dbEnv "t"]} {
+    send "Reading database connection of test from file ~/.your_own_folder/mysql_conn_test2\n"
+    set fileConnStr [open ~/.your_own_folder/mysql_conn_test2]
+} elseif {[regexp -nocase $dbEnv "pre"]} {
+    send "Reading database connection of preprod from file ~/.your_own_folder/mysql_conn_preprod\n"
+    set fileConnStr [open ~/.your_own_folder/mysql_conn_preprod]
+} elseif {[regexp -nocase $dbEnv "p"]} {
+  send "Reading database connection of preprod from file ~/.your_own_folder/mysql_conn_preprod\n"
+  set fileConnStr [open ~/.your_own_folder/mysql_conn_prod]
+}
+
+gets $fileConnStr conn_str
+
+send "Start to ssh\n"
+spawn ssh -i ~/dev/token/firm_token_file $userLogin@jumpserver-.your_company_name.com -p 2222
+expect "JumpServer"
+send "1\r"
+expect "Aws-com_prod-jump-server"
+send -- "3\r"
+expect "https"
+expect "your_company_name_develop_admin"
+send "$conn_str\r"
+send "select * from SalesOrder where orderNo='$orderId' or uuid='$orderId' \\G; \r"
+interact
